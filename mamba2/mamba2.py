@@ -29,9 +29,9 @@ import jax
 import jax.numpy as jnp
 import flax.nnx as nnx
 
-from mamba2.nn.linear import DepthwiseConv1d, ACT2FN
-from mamba2.nn.ssd import ssd_forward, ACT2FN
-from mamba2.nn.norm import RMSNorm
+from nn.linear import DepthwiseConv1d
+from nn.ssd import ssd_forward, ACT2FN
+from nn.norm import RMSNorm
 
 @dataclasses.dataclass(frozen=True)
 class Mamba2Config:
