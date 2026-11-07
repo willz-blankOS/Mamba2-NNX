@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mamba2"
+version = "0.1.0"
+description = "JAX/Flax NNX implementation of Mamba2 model with state caching, and time-series forecasting"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.12"
+dependencies = [
+    "flax",
+    "jax[cuda13]",
+    "optax"
+]
+authors = [
+    {name = "Williams Edi"}
+]
+
+
+[tool.setuptools]
+packages = ["mamba2"]
