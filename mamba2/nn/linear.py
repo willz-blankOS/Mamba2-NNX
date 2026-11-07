@@ -103,3 +103,46 @@ class SwiGLUFFN(nnx.Module):
         x2 = self.w2(x)
         hidden = nnx.silu(x1) * x2
         return self.w3(hidden)
+
+class DepthwiseConv1d(nnx.Module):
+    def __init__(
+        self,
+        features: int,
+        kernel_size: int,
+        use_bias: bool = True,
+        *,
+        rngs: nnx.Rngs
+    ):
+        self.features = features
+        self.kernel_size = kernel_size
+        self.conv = nnx.Conv(
+            in_features=features,
+            out_features=features,
+            kernel_size=(kernel_size,),
+            padding="SAME",
+            feature_group_count=features,
+            use_bias=use_bias,
+            rngs=rngs
+        )
+    
+    @jax.named_scope("depthwise_conv1d")
+    def __call__(self, x: jax.Array, conv_state: jax.Array | None = None) -> tuple[jax.Array, jax.Array]:
+        cache_len = self.kernel_size - 1
+        seq_len = x.shape[1]
+        
+        if conv_state is None:
+            x_padded = jnp.pad(x, ((0, 0), (cache_len, 0), (0, 0)), mode="constant", constant_values=0.0)
+        else:
+            x_padded = jnp.concatenate([jnp.transpose(conv_state, (0, 2, 1)), x], axis=1)
+        
+        w = self.conv.kernel[:][:, 0, :]
+        output = w[0] * x_padded[:, 0:seq_len, :]
+        for j in range(1, self.kernel_size):
+            output = output + w[j] * x_padded[:, j:j + seq_len, :]
+        if self.conv.bias is not None:
+            output = output + self.conv.bias[:]
+
+        new_conv_state = jnp.transpose(x_padded[:, -cache_len:, :], (0, 2, 1))
+
+        return output, new_conv_state        
+            

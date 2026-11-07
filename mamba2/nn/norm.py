@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 import flax.nnx as nnx
@@ -22,6 +24,9 @@ class RMSNorm(nnx.Module):
     def _norm(self, x: jax.Array):
         return x * jax.lax.rsqrt(jnp.mean(jnp.square(x), -1, keepdims=True) + self.eps)
 
-    def __call__(self, x: jax.Array):
-        output = self._norm(x)
+    def __call__(self, x: jax.Array, residual: Optional[jax.Array] = None):
+        _x = jnp.astype(x.copy(), jnp.float32)
+        if residual is not None and self.gate_residual:
+            _x = _x * nnx.silu(residual.astype(jnp.float32))
+        output = self._norm(_x)
         return output * self.weight.value
